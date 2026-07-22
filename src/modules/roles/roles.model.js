@@ -1,24 +1,25 @@
-import { Model, DataTypes } from "sequelize"
+import { Model, DataTypes } from "sequelize";
 import { sequelize } from "../../database.js";
 
-export class Movimiento extends Model { }
+export class Rol extends Model {}
 
-Movimiento.init({
+Rol.init({
     id: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true
     },
-    cantidad: {
-        type: DataTypes.INTEGER,
+    nombre: {
+        type: DataTypes.STRING(50),
         allowNull: false,
+        unique: true
     },
-    insumoID: {
-        type: DataTypes.UUID,
-        allowNull: false,
-    },
-
+    descripcion: {
+        type: DataTypes.STRING(255),
+        allowNull: true
+    }
 }, {
     sequelize,
-    modelName: "movimiento"
-})
+    modelName: "rol",
+    tableName: "roles"
+});

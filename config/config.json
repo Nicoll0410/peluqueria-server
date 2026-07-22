@@ -8,10 +8,10 @@
   },
   "production": {
     "username": "root",
-    "password": "pVYslnDKLuLQsEaHMhFRomrTMJIkiJHk",
-    "port": "53203",
+    "password": "REFLohNOnAQFFDMDWrDrPpWGJpNMUBud",
+    "port": "33944",
     "database": "railway",
-    "host": "yamabiko.proxy.rlwy.net",
+    "host": "shuttle.proxy.rlwy.net",
     "dialect": "mysql"
   }
 }

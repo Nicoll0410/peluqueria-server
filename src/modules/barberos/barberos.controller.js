@@ -67,7 +67,7 @@ class BarberosController {
               {
                 model: Rol,
                 as: "rol",
-                attributes: ["id", "nombre", "avatar"],
+                attributes: ["id", "nombre"],
               },
             ],
           },
@@ -529,7 +529,7 @@ async updateHorario(req, res) {
             model: Usuario,
             attributes: ["id", "email", "estaVerificado"],
             include: [
-              { model: Rol, as: "rol", attributes: ["id", "nombre", "avatar"] },
+              { model: Rol, as: "rol", attributes: ["id", "nombre"] },
             ],
           },
         ],
@@ -681,7 +681,7 @@ async updateHorario(req, res) {
               {
                 model: Rol,
                 as: "rol",
-                attributes: ["id", "nombre", "avatar"],
+                attributes: ["id", "nombre"],
               },
             ],
           },

@@ -2,7 +2,7 @@
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
-import http from "http"; // 👈 necesario para socket.io
+import http from "http";
 import { Server as SocketIOServer } from "socket.io";
 import { task, recordatorioTask } from './modules/citas/citas.model.js';
 
@@ -45,39 +45,30 @@ export class Server {
           "http://localhost:3000",
           "http://localhost:8081",
           "http://localhost:19006",
-          "http://localhost:19000" // ← Agrega Expo web
+          "http://localhost:19000"
         ],
         methods: ["GET", "POST", "PUT", "DELETE"],
         credentials: true,
       },
-      transports: ['websocket' , 'polling']
+      transports: ['websocket', 'polling']
     });
 
-    // ✅ GUARDAR io EN app PARA ACCESO GLOBAL
     this.app.set("io", this.io);
 
-    // Eventos de conexión
     this.io.on("connection", (socket) => {
       console.log("🟢 Cliente conectado:", socket.id);
 
-      // Debuggear todos los eventos
       socket.onAny((event, ...args) => {
         console.log(`📦 Socket Event: ${event}`, args);
       });
 
-      // Unir al usuario a su sala personal
       socket.on("unir_usuario", (usuarioId) => {
-        console.log(`👤 Uniendo usuario ${usuarioId} a sala: usuario_${usuarioId}`);
         socket.join(`usuario_${usuarioId}`);
-        
-        // Confirmar unión
         socket.emit("usuario_unido", { 
           success: true, 
           usuarioId,
           room: `usuario_${usuarioId}`
         });
-        
-        console.log(`✅ Usuario ${usuarioId} unido correctamente`);
       });
 
       socket.on("disconnect", (reason) => {
@@ -85,47 +76,51 @@ export class Server {
       });
     });
 
-    // Sincronizar modelos y levantar servidor
-    syncAllModels()
-      .then(() => {
-        JobsManager.iniciarTodos();
+    // ⭐ INICIAR EL SERVIDOR INMEDIATAMENTE (sin esperar sync)
+    const PORT = process.env.PORT || 10000;
+    this.server.listen(PORT, "0.0.0.0", () => {
+      console.log(`🚀 Servidor ejecutándose en el puerto ${PORT}`);
+    });
 
-        // ✅ INICIAR JOBS DE CITAS (COMPLETAR + RECORDATORIOS)
-        console.log('🔄 Iniciando jobs de citas...');
-        task.start();
-        recordatorioTask.start();
-        console.log('✅ Jobs de citas iniciados (completar + recordatorios)');
+    // ⭐ Sincronizar modelos DESPUÉS de que el servidor ya está escuchando
+    this.iniciarSincronizacion();
+  }
 
-        
-        // ✅ CONFIGURACIÓN DE TIMEOUTS PARA RENDER
-        this.server.timeout = 300000; // 5 minutos
-        this.server.keepAliveTimeout = 120000; // 2 minutos
-        
-        this.server.listen(process.env.PORT, "0.0.0.0", () => {
-          console.log(`🚀 Servidor ejecutándose en el puerto ${process.env.PORT}`);
-          console.log('📧 Sistema de recordatorios activo');
-        });
-      })
-      .catch((err) => {
-        console.error("❌ Error al sincronizar modelos:", err);
-      });
+  async iniciarSincronizacion() {
+    try {
+      console.log('🔄 Sincronizando modelos...');
+      await syncAllModels();
+      console.log('✅ Modelos sincronizados');
+
+      // Iniciar jobs
+      JobsManager.iniciarTodos();
+      task.start();
+      recordatorioTask.start();
+      console.log('✅ Jobs de citas iniciados');
+
+      // Configurar timeouts
+      this.server.timeout = 300000;
+      this.server.keepAliveTimeout = 120000;
+
+      console.log('📧 Sistema de recordatorios activo');
+    } catch (err) {
+      console.error("❌ Error al sincronizar modelos:", err.message);
+      // El servidor sigue corriendo aunque falle la sincronización
+    }
   }
 
   middlewares() {
-    // Configuración de CORS CORREGIDA
     const allowedOrigins = [
       "https://salon-belleza-alba.vercel.app",
       "http://localhost:3000",
-      "http://localhost:8081",
+      "http://localhost:8084",
       "http://localhost:19006",
     ];
 
     this.app.use(
       cors({
         origin: function (origin, callback) {
-          // Permitir requests sin origin (como mobile apps, postman, curl)
           if (!origin) return callback(null, true);
-
           if (allowedOrigins.indexOf(origin) !== -1) {
             return callback(null, true);
           } else {
@@ -135,35 +130,11 @@ export class Server {
         },
         credentials: true,
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allowedHeaders: [
-          "Content-Type",
-          "Authorization",
-          "x-auth-token",
-          "X-Requested-With",
-        ],
+        allowedHeaders: ["Content-Type", "Authorization", "x-auth-token", "X-Requested-With"],
       })
     );
 
-    // Manejar preflight requests
     this.app.options("*", cors());
-
-    // Headers adicionales para CORS
-    this.app.use((req, res, next) => {
-      res.header("Access-Control-Allow-Credentials", "true");
-      res.header(
-        "Access-Control-Allow-Methods",
-        "GET, POST, PUT, DELETE, OPTIONS"
-      );
-      res.header(
-        "Access-Control-Allow-Headers",
-        "Content-Type, Authorization, x-auth-token, X-Requested-With"
-      );
-
-      if (req.method === "OPTIONS") {
-        return res.status(200).end();
-      }
-      next();
-    });
 
     this.app.use(express.json({ limit: "50mb" }));
     this.app.use(express.urlencoded({ extended: true, limit: "10mb" }));
@@ -173,18 +144,9 @@ export class Server {
   }
 
   routes() {
-    // ✅ ENDPOINTS PÚBLICOS PARA HEALTH CHECKS (AGREGADOS AL PRINCIPIO)
+    // ⭐ HEALTH CHECK - LO MÁS IMPORTANTE PARA RENDER
     this.app.get('/health', (req, res) => {
-      res.json({ 
-        status: 'ok', 
-        message: 'Servidor funcionando',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        jobs: {
-          completarCitas: task.getStatus ? task.getStatus() : 'running',
-          recordatorios: recordatorioTask.getStatus ? recordatorioTask.getStatus() : 'running'
-        }
-      });
+      res.json({ status: 'ok', message: 'Salón Alba Quiceno API', timestamp: new Date().toISOString() });
     });
 
     this.app.get('/ping', (req, res) => {
@@ -192,26 +154,16 @@ export class Server {
     });
 
     this.app.get('/', (req, res) => {
-      res.json({ 
-        message: 'API Barbería funcionando',
-        version: '1.0',
-        timestamp: new Date().toISOString(),
-        endpoints: {
-          health: '/health',
-          ping: '/ping',
-          auth: '/auth',
-          public: '/public'
-        }
-      });
+      res.json({ message: 'Salón Alba Quiceno API funcionando', version: '1.0' });
     });
 
-    // Rutas públicas existentes
+    // Rutas públicas
     this.app.use("/auth", authRouter);
     this.app.use("/public", publicRouter);
     this.app.use("/usuarios", usuarioRouter);
     this.app.use("/galeria", galeriaRouter);
 
-    // Middleware JWT para proteger el resto
+    // Middleware JWT
     this.app.use(jwtMiddlewares.verifyToken);
 
     // Rutas privadas
@@ -220,7 +172,6 @@ export class Server {
     this.app.use("/categorias-insumos", categoriasInsumosRouter);
     this.app.use("/insumos", insumosRouter);
     this.app.use("/movimientos", movimientosRouter);
-    this.app.use("/usuarios", usuarioRouter);
     this.app.use("/servicios", serviciosRouter);
     this.app.use("/notifications", notificationsRouter);
     this.app.use("/barberos", barberosRouter);
@@ -230,53 +181,12 @@ export class Server {
     this.app.use("/citas", citasRouter);
     this.app.use("/ventas", RouterVentas);
 
-    // Ruta de health check existente
-    this.app.get("/health-check", (req, res) => {
-      res.json({
-        status: "OK",
-        message: "CORS configurado correctamente",
-        timestamp: new Date().toISOString(),
-      });
-    });
-
-    // ✅ MANEJO DE ERRORES PARA RUTAS NO ENCONTRADAS
+    // 404
     this.app.use('*', (req, res) => {
-      res.status(404).json({
-        error: 'Ruta no encontrada',
-        path: req.originalUrl,
-        availableEndpoints: ['/health', '/ping', '/auth', '/public']
-      });
+      res.status(404).json({ error: 'Ruta no encontrada', path: req.originalUrl });
     });
-  }
-
-  // ✅ MÉTODO KEEP-ALIVE AUTOMÁTICO
-  iniciarKeepAlive() {
-    console.log('🔄 Iniciando keep-alive automático...');
-    
-    const urls = [
-      'https://barber-server-6kuo.onrender.com/health',
-      'https://barber-server-6kuo.onrender.com/ping',
-      'https://barber-server-6kuo.onrender.com/health-check'
-    ];
-    
-    // Función para hacer ping
-    const hacerPing = async () => {
-      for (const url of urls) {
-        try {
-          const response = await fetch(url);
-          console.log(`✅ Keep-alive ${new Date().toLocaleTimeString()}: ${url} - Status: ${response.status}`);
-        } catch (error) {
-          console.log(`⚠️ Keep-alive falló ${new Date().toLocaleTimeString()}: ${url} - Error: ${error.message}`);
-        }
-      }
-    };
-    
-    // Ejecutar inmediatamente
-    hacerPing();
-    
-    // Programar cada 4 minutos
-    setInterval(hacerPing, 4 * 60 * 1000);
-    
-    console.log('✅ Keep-alive programado cada 4 minutos');
   }
 }
+
+// ⭐ INICIAR EL SERVIDOR
+const server = new Server();

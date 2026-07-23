@@ -59,39 +59,74 @@ Barbero.init({
 
 async function initializeAdmin() {
     try {
-
-        await sequelize.authenticate()
+        await sequelize.authenticate();
+        
+        // Verificar si ya hay barberos
         const amount = await Barbero.count();
+        if (amount > 0) {
+            console.log("✅ Ya existen barberos, admin no necesario");
+            return;
+        }
 
-        if (amount > 0) return;
-
+        // Buscar el rol Administrador
         const adminRole = await Rol.findOne({ where: { nombre: "Administrador" } });
-        const userInfo = {
-            email: "salondebelleza.albaquiceno@gmail.com",
-            password: await passwordUtils.encrypt("albaquiceno17"),
-            estaVerificado: true,
-            rolID: adminRole.id
-        };
+        
+        if (!adminRole) {
+            console.log("⚠️ No se encontró el rol Administrador en la BD");
+            return;
+        }
 
-        const usuario = await Usuario.create(userInfo);
+        // Verificar si el usuario admin ya existe
+        let usuario = await Usuario.findOne({ 
+            where: { email: "salondebelleza.albaquiceno@gmail.com" } 
+        });
 
-        const barberInfo = {
+        if (!usuario) {
+            // Crear usuario admin
+            usuario = await Usuario.create({
+                email: "salondebelleza.albaquiceno@gmail.com",
+                password: await passwordUtils.encrypt("albaquiceno17"),
+                estaVerificado: true,
+                rolID: adminRole.id
+            });
+            console.log("✅ Usuario administrador creado");
+        } else {
+            console.log("✅ Usuario administrador ya existía");
+        }
+
+        // Verificar si el barbero admin ya existe
+        const existingBarbero = await Barbero.findOne({ 
+            where: { usuarioID: usuario.id } 
+        });
+
+        if (existingBarbero) {
+            console.log("✅ Barbero administrador ya existe");
+            return;
+        }
+
+        // Crear barbero administrador
+        await Barbero.create({
             nombre: "Administrador",
             avatar: null,
-            cedula: 100000000,
-            telefono: 100000000,
+            cedula: "100000000",
+            telefono: "100000000",
             fecha_nacimiento: "2006-08-08",
             fecha_de_contratacion: "2006-08-08",
-            profesion: "Administrador",
             usuarioID: usuario.id
-        };
+        });
 
-        await Barbero.create(barberInfo);
+        console.log("🎉 ADMINISTRADOR CREADO EXITOSAMENTE");
 
-        console.log("ADMINISTRADOR CREADO");
     } catch (error) {
-        console.log(error);
+        console.log("⚠️ Error en initializeAdmin (no crítico):", error.message);
     }
 }
 
-initializeAdmin()
+// Ejecutar después de que todo esté listo
+setTimeout(() => {
+    initializeAdmin().then(() => {
+        console.log("✅ Inicialización de admin completada");
+    }).catch(err => {
+        console.log("⚠️ Error final:", err.message);
+    });
+}, 3000);

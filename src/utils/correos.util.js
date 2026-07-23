@@ -33,7 +33,7 @@ class Correos {
             Verificar cuenta
           </a>
         </p>
-        <p style="margin:10px 0;">Gracias,<br>El equipo de New York Barber</p>
+        <p style="margin:10px 0;">Gracias,<br>El equipo de Salón de belleza Alba</p>
       </td>
     </tr>
   </table>
@@ -65,7 +65,7 @@ class Correos {
             <p style="margin:10px 0;">Utiliza este código en la app para restablecer tu contraseña:</p>
             <div style="text-align:center;margin:20px 0;font-size:24px;font-weight:bold;color:#333;">${codigo}</div>
             <p style="margin:10px 0;">Si no solicitaste esto, ignora el correo.</p>
-            <p style="margin:10px 0;">Gracias,<br>El equipo de New York Barber</p>
+            <p style="margin:10px 0;">Gracias,<br>El equipo de Salón de belleza Alba</p>
           </td>
         </tr>
       </table>
@@ -100,7 +100,7 @@ class Correos {
           <strong>Email:</strong> ${email}<br>
           <strong>Contraseña:</strong> ${password}
         </p>
-        <p style="margin:10px 0;">Gracias,<br>El equipo de New York Barber</p>
+        <p style="margin:10px 0;">Gracias,<br>El equipo de Salón de belleza Alba</p>
       </td>
     </tr>
   </table>
@@ -128,7 +128,7 @@ class Correos {
             <p style="margin:10px 0;">Tu cita del ${fechaFormateada} a las ${horaFormateada} ha sido cancelada.</p>
             <p style="margin:10px 0;">Razón: ${razon}</p>
             <p style="margin:10px 0;">Si tienes dudas, contáctanos.</p>
-            <p style="margin:10px 0;">Gracias,<br>El equipo de New York Barber</p>
+            <p style="margin:10px 0;">Gracias,<br>El equipo de Salón de belleza Alba</p>
           </td>
         </tr>
       </table>
@@ -161,7 +161,7 @@ class Correos {
                 <li><strong>Servicio:</strong> ${servicio_nombre}</li>
               </ul>
               <p style="margin:10px 0;">Por favor, revisa tu agenda para confirmar disponibilidad.</p>
-              <p style="margin:10px 0;">Gracias,<br>El equipo de New York Barber</p>
+              <p style="margin:10px 0;">Gracias,<br>El equipo de Salón de belleza Alba</p>
             </td>
           </tr>
         </table>
@@ -186,7 +186,7 @@ class Correos {
                 <li><strong>Servicio:</strong> ${servicio_nombre}</li>
                 <li><strong>Motivo:</strong> ${motivo_cancelacion || 'No especificado'}</li>
               </ul>
-              <p style="margin:10px 0;">Gracias,<br>El equipo de New York Barber</p>
+              <p style="margin:10px 0;">Gracias,<br>El equipo de Salón de belleza Alba</p>
             </td>
           </tr>
         </table>
@@ -221,7 +221,7 @@ class Correos {
                 <li><strong>Servicio:</strong> ${servicio_nombre}</li>
               </ul>
               <p style="margin:15px 0;font-size:14px;">Por favor, asegúrate de estar listo para atender al cliente.</p>
-              <p style="margin:10px 0;">Gracias,<br>El equipo de Vianney The Barber</p>
+              <p style="margin:10px 0;">Gracias,<br>El equipo de Salón de belleza Alba</p>
             </td>
           </tr>
         </table>
@@ -240,13 +240,13 @@ class Correos {
               <h2 style="font-size:24px;margin:0 0 10px;color:#FF6B00;">⏰ Recordatorio de Cita</h2>
               <p style="margin:10px 0;font-size:16px;"><strong>¡Tu cita es en 20 minutos!</strong></p>
               <ul style="margin:15px 0;padding-left:20px;font-size:14px;">
-                <li><strong>Barbero:</strong> ${barbero_nombre}</li>
+                <li><strong>Estilista:</strong> ${barbero_nombre}</li>
                 <li><strong>Fecha:</strong> ${fechaFormateada}</li>
                 <li><strong>Hora:</strong> ${horaFormateada}</li>
                 <li><strong>Servicio:</strong> ${servicio_nombre}</li>
               </ul>
               <p style="margin:15px 0;font-size:14px;">Te esperamos puntualmente. Si necesitas cancelar o reprogramar, por favor contáctanos lo antes posible.</p>
-              <p style="margin:10px 0;">Gracias,<br>El equipo de Vianney The Barber</p>
+              <p style="margin:10px 0;">Gracias,<br>El equipo de Salón de belleza Alba</p>
             </td>
           </tr>
         </table>

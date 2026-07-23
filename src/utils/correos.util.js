@@ -86,7 +86,7 @@ class Correos {
     </tr>
     <tr>
       <td style="padding:20px;">
-        <h2 style="font-size:24px;margin:0 0 10px;">¡Bienvenido a NY Barber!</h2>
+        <h2 style="font-size:24px;margin:0 0 10px;">¡Bienvenido a Salón de Belleza Alba!</h2>
         <p style="margin:10px 0;">Un administrador ha creado una cuenta para ti. Por favor verifica tu correo electrónico:</p>
         <div style="text-align:center;margin:20px 0;font-size:24px;font-weight:bold;color:#333;">${codigo}</div>
         <p style="text-align:center;margin:20px 0;">

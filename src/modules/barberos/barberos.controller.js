@@ -1061,7 +1061,7 @@ async getParaAgenda(req = request, res = response) {
             {
               model: Rol,
               as: "rol",
-              attributes: ["id", "nombre", "avatar"],
+              attributes: ["id", "nombre"],
             },
           ],
         },

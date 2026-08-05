@@ -41,7 +41,7 @@ export class Server {
     this.io = new SocketIOServer(this.server, {
       cors: {
         origin: [
-          "https://salon-belleza-alba.vercel.app",
+          "https://sala-belleza-alba.vercel.app",
           "http://localhost:3000",
           "http://localhost:8081",
           "http://localhost:19006",
@@ -111,7 +111,7 @@ export class Server {
 
   middlewares() {
     const allowedOrigins = [
-      "https://salon-belleza-alba.vercel.app",
+      "https://sala-belleza-alba.vercel.app",
       "http://localhost:3000",
       "http://localhost:8084",
       "http://localhost:19006",

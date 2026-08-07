@@ -154,7 +154,7 @@ export class Server {
     });
 
     this.app.get('/', (req, res) => {
-      res.json({ message: 'Salón Alba Quiceno API funcionando', version: '1.0' });
+      res.json({ message: 'Sala Alba Quiceno API funcionando', version: '1.0' });
     });
 
     // Rutas públicas

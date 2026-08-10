@@ -74,7 +74,7 @@ export const verifyToken = async (req, res, next) => {
             email: usuario.email,
             rol: {
                 id: usuario.rol.id,
-                nombre: usuario.rol.nombre
+                nombre: usuario.rol.nombre === 'Barbero' ? 'Estilista' : usuario.rol.nombre
             },
             verificado: usuario.estaVerificado
         };

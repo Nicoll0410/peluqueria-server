@@ -13,7 +13,7 @@ export const verifyToken = async (req, res, next) => {
         '/usuarios/verificar-codigo',
         '/usuarios/cambiar-password-codigo',
     ];
-
+    
     // Si la ruta es pública, continuar sin verificar token
     if (publicRoutes.some(route => req.path.startsWith(route))) {
         return next();
@@ -24,17 +24,17 @@ export const verifyToken = async (req, res, next) => {
     if (!authHeader) {
         return res.status(401).json({ mensaje: "¡Ups! Parece que no tienes una sesión activa" });
     }
-
+    
     if (!authHeader.startsWith('Bearer ')) {
         return res.status(401).json({ mensaje: "Formato del token inválido" });
     }
-
+    
     const token = authHeader.split(' ')[1];
-
+    
     try {
         // Verificar el token JWT
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
+        
         if (!decoded) {
             return res.status(401).json({ mensaje: "Token no válido" });
         }
@@ -61,10 +61,10 @@ export const verifyToken = async (req, res, next) => {
                     as: 'rol',
                     attributes: ['id', 'nombre']
                 }]
-            });
-        }
+                });
+            }
 
-        if (!usuario) {
+            if (!usuario) {
             return res.status(401).json({ mensaje: "Usuario no encontrado" });
         }
 
@@ -74,8 +74,8 @@ export const verifyToken = async (req, res, next) => {
             email: usuario.email,
             rol: {
                 id: usuario.rol.id,
-                nombre: usuario.rol.nombre === 'Barbero' || usuario.rol.nombre === 'BARBERO' ? 'Estilista' : usuario.rol.nombre
-            },
+                nombre: usuario.rol.nombre
+            },  
             verificado: usuario.estaVerificado
         };
 
@@ -84,22 +84,22 @@ export const verifyToken = async (req, res, next) => {
         next();
     } catch (error) {
         console.error('Error en middleware JWT:', error);
-
+        
         if (error.name === 'TokenExpiredError') {
-            return res.status(401).json({
+            return res.status(401).json({ 
                 mensaje: 'Token expirado',
                 error: 'TOKEN_EXPIRED'
             });
         }
-
+        
         if (error.name === 'JsonWebTokenError') {
-            return res.status(401).json({
+            return res.status(401).json({ 
                 mensaje: 'Token inválido',
                 error: 'INVALID_TOKEN'
             });
         }
 
-        return res.status(500).json({
+        return res.status(500).json({ 
             mensaje: 'Error en el servidor',
             error: process.env.NODE_ENV === 'development' ? error.message : null
         });

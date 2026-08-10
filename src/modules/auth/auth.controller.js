@@ -35,7 +35,7 @@ class AuthController {
 
       const token = jwt.createToken({
         email: usuario.email,
-        rol: { id: rol.id, nombre: rol.nombre === 'Barbero' || rol.nombre === 'BARBERO' ? 'Estilista' : rol.nombre },
+        rol: { id: rol.id, nombre: rol.nombre },
         verificado: usuario.estaVerificado,
       });
 
@@ -70,7 +70,7 @@ class AuthController {
 
       const token = jwt.createToken({
         email: usuario.email,
-        rol: { id: rol.id, nombre: rol.nombre === 'Barbero' || rol.nombre === 'BARBERO' ? 'Estilista' : rol.nombre },
+        rol: { id: rol.id, nombre: rol.nombre },
         verificado: true,
       });
 
@@ -109,7 +109,7 @@ class AuthController {
 
       const token = jwt.createToken({
         email: usuario.email,
-        rol: { id: rol.id, nombre: rol.nombre === 'Barbero' || rol.nombre === 'BARBERO' ? 'Estilista' : rol.nombre },
+        rol: { id: rol.id, nombre: rol.nombre },
         verificado: true,
       });
 

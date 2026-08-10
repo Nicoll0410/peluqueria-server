@@ -170,7 +170,7 @@ class AuthController {
 
       await sendEmail({
         to: email,
-        subject: "Verifica tu cuenta en NY Barber",
+        subject: "Verifica tu cuenta en Sala de belleza Alba",
         html: correos.confirmarIdentidad({ 
           codigo, 
           email,
@@ -270,7 +270,7 @@ async resendVerificationCode(req = request, res = response) {
     // Envía el email con manejo de errores
     const emailResult = await sendEmail({
       to: email,
-      subject: "Confirmación de identidad - NY Barber",
+      subject: "Confirmación de identidad -  Sala de belleza Alba",
       html: correos.confirmarIdentidad({ 
         codigo, 
         email,

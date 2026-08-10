@@ -234,7 +234,7 @@ class BarberosController {
       // Enviar email
       await sendEmail({
         to: barbero.usuario.email,
-        subject: "Reenvío de verificación - NY Barber",
+        subject: "Reenvío de verificación - Sala de belleza Alba ",
         html: correos.envioCredenciales({
           codigo,
           email: barbero.usuario.email,
@@ -722,7 +722,7 @@ async updateHorario(req, res) {
 
       await sendEmail({
         to: email,
-        subject: "Confirmación de identidad - NY Barber",
+        subject: "Confirmación de identidad - Sala de belleza Alba",
         html: correos.envioCredenciales({
           codigo,
           email,

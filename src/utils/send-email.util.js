@@ -32,7 +32,7 @@ transporter.verify(function (error, success) {
 export async function sendEmail({ to, subject, text, html }) {
   try {
     const mailOptions = {
-      from: `"NY Barber" <${process.env.EMAIL_USER}>`,
+      from: `"Sala de belleza Alba" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       text,

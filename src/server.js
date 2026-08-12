@@ -47,7 +47,7 @@ export class Server {
           "http://localhost:19006",
           "http://localhost:19000"
         ],
-        methods: ["GET", "POST", "PUT", "DELETE"],
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
         credentials: true,
       },
       transports: ['websocket', 'polling']
@@ -129,7 +129,7 @@ export class Server {
           }
         },
         credentials: true,
-        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "Authorization", "x-auth-token", "X-Requested-With"],
       })
     );

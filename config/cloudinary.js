@@ -13,7 +13,7 @@ cloudinary.config({
 const imageStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'barberia/galeria/imagenes',
+    folder: 'peluqueria/galeria/imagenes',
     allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
     transformation: [{ width: 1000, height: 1000, crop: 'limit' }]
   }
@@ -23,7 +23,7 @@ const imageStorage = new CloudinaryStorage({
 const videoStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'barberia/galeria/videos',
+    folder: 'peluqueria/galeria/videos',
     resource_type: 'video',
     allowed_formats: ['mp4', 'mov', 'avi', 'webm'],
     transformation: [{ width: 1280, height: 720, crop: 'limit' }]

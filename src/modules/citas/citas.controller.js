@@ -758,9 +758,7 @@ class CitasController {
           transaction: t
         });
         
-        const servicioInfo = await Servicio.findByPk(req.body.servicioID, {
-          transaction: t
-        });
+        const servicioInfo = serviciosSeleccionados[0];
         
         let clienteNombre = "";
         if (req.body.pacienteID) {
@@ -784,7 +782,7 @@ class CitasController {
           
           await sendEmail({
             to: barberoConEmail.usuario.email,
-            subject: 'Nueva cita agendada - Barbería',
+            subject: 'Nueva cita agendada - Sala de belleza Alba',
             html: emailContent
           });
         }

@@ -3,7 +3,7 @@ import { sequelize } from "../../database.js";
 import { format, sub } from "date-fns";
 import cron from "node-cron";
 
-export class Cita extends Model {}
+export class Cita extends Model { }
 
 Cita.init(
   {
@@ -53,6 +53,16 @@ Cita.init(
     servicioID: {
       type: DataTypes.UUID,
       allowNull: false,
+    },
+    serviciosAdicionales: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      defaultValue: null,
+    },
+    precioTotal: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      defaultValue: 0,
     },
     direccion: {
       type: DataTypes.STRING,
@@ -202,7 +212,7 @@ const task = cron.schedule(
             },
           }
         );
-        
+
         console.log(`✅ Se completaron ${citasParaCompletar.length} citas automáticamente`);
       }
     } catch (error) {
@@ -220,23 +230,23 @@ const recordatorioTask = cron.schedule(
   async () => {
     try {
       const ahora = new Date();
-      
+
       // Calcular 20 minutos en el futuro
       const en20Minutos = new Date(ahora.getTime() + 20 * 60000);
-      
+
       // ✅ Usar la fecha de HOY, no la fecha futura
       const fechaHoy = format(ahora, "yyyy-MM-dd");
-      
+
       // ✅ Calcular la hora de 20 minutos después
       const horaEn20MinInicio = format(en20Minutos, "HH:mm");
       const horaEn20MinFin = format(new Date(en20Minutos.getTime() + 60000), "HH:mm");
-      
+
       // Importar modelos necesarios dinámicamente
       const { Barbero } = await import("../barberos/barberos.model.js");
       const { Cliente } = await import("../clientes/clientes.model.js");
       const { Servicio } = await import("../servicios/servicios.model.js");
       const { Usuario } = await import("../usuarios/usuarios.model.js");
-      
+
       // ✅ Buscar citas para HOY que empiecen en 20 minutos
       const citasParaRecordar = await Cita.findAll({
         where: {
@@ -268,45 +278,45 @@ const recordatorioTask = cron.schedule(
 
       if (citasParaRecordar.length > 0) {
         console.log(`📧 Enviando recordatorios para ${citasParaRecordar.length} citas`);
-        
+
         for (const cita of citasParaRecordar) {
           try {
             // Obtener emails
             const emailBarbero = cita.barbero?.usuario?.email;
             let emailCliente = null;
-            
+
             if (cita.pacienteID && cita.cliente?.usuario?.email) {
               emailCliente = cita.cliente.usuario.email;
             }
-            
+
             const fechaHora = new Date(`${cita.fecha}T${cita.hora}`);
-            
+
             // Importar utilidades de email
             const { correos } = await import("../../utils/correos.util.js");
             const { sendEmail } = await import("../../utils/send-email.util.js");
-            
+
             // ✅ Enviar email al barbero
             if (emailBarbero) {
-              const clienteNombre = cita.pacienteID 
-                ? cita.cliente?.nombre 
+              const clienteNombre = cita.pacienteID
+                ? cita.cliente?.nombre
                 : cita.pacienteTemporalNombre;
-              
+
               const emailContent = correos.recordatorioCita({
                 destinatario: 'barbero',
                 cliente_nombre: clienteNombre,
                 fecha_hora: fechaHora,
                 servicio_nombre: cita.servicio?.nombre || 'Servicio'
               });
-              
+
               await sendEmail({
                 to: emailBarbero,
                 subject: '⏰ Recordatorio: Cita en 20 minutos',
                 html: emailContent
               });
-              
+
               console.log(`✅ Recordatorio enviado al barbero: ${emailBarbero}`);
             }
-            
+
             // ✅ Enviar email al cliente (si existe y tiene email)
             if (emailCliente) {
               const emailContent = correos.recordatorioCita({
@@ -315,25 +325,25 @@ const recordatorioTask = cron.schedule(
                 fecha_hora: fechaHora,
                 servicio_nombre: cita.servicio?.nombre || 'Servicio'
               });
-              
+
               await sendEmail({
                 to: emailCliente,
                 subject: '⏰ Recordatorio: Tu cita en 20 minutos',
                 html: emailContent
               });
-              
+
               console.log(`✅ Recordatorio enviado al cliente: ${emailCliente}`);
             }
-            
+
             // ✅ Marcar como enviado
             await cita.update({ recordatorio_enviado: true });
-            
+
           } catch (emailError) {
             console.error(`❌ Error enviando recordatorio para cita ${cita.id}:`, emailError);
           }
         }
       }
-      
+
     } catch (error) {
       console.error("❌ Error en tarea de recordatorios:", error);
     }

@@ -483,6 +483,7 @@ class CitasController {
     }
   }
 
+  // ✅ NUEVO: CREATE CON MULTISERVICIOS
   async create(req = request, res = response) {
     const t = await sequelize.transaction();
     try {
@@ -491,98 +492,100 @@ class CitasController {
         JSON.stringify(req.body, null, 2)
       );
 
-      const requiredFields = ["barberoID", "servicioID", "fecha", "hora"];
+      const { barberoID, fecha, hora, servicios: serviciosArray } = req.body;
 
-      const missingFields = requiredFields.filter((field) => !req.body[field]);
-      if (missingFields.length > 0) {
+      // ✅ Validar campos requeridos
+      if (!barberoID || !fecha || !hora) {
         await t.rollback();
         return res.status(400).json({
-          mensaje: `Faltan campos requeridos: ${missingFields.join(", ")}`,
-          camposFaltantes: missingFields,
+          mensaje: "Faltan campos requeridos: barberoID, fecha, hora",
         });
       }
 
-      const barbero = await Barbero.findByPk(req.body.barberoID, {
+      // ✅ Obtener barbero
+      const barbero = await Barbero.findByPk(barberoID, {
         include: [{ model: Usuario, as: "usuario" }],
         transaction: t,
       });
-
       if (!barbero) {
         await t.rollback();
-        return res.status(404).json({
-          mensaje: "Barbero no encontrado",
-          barberoID: req.body.barberoID,
-        });
+        return res.status(404).json({ mensaje: "Barbero no encontrado" });
       }
 
-      const servicio = await Servicio.findByPk(req.body.servicioID, {
-        transaction: t,
-      });
-      if (!servicio) {
+      // ✅ ACEPTAR servicios múltiples o servicio único
+      let serviciosSeleccionados = [];
+
+      if (serviciosArray && Array.isArray(serviciosArray) && serviciosArray.length > 0) {
+        // ✅ NUEVO: Múltiples servicios
+        serviciosSeleccionados = [];
+        for (const serv of serviciosArray) {
+          const servicioEncontrado = await Servicio.findByPk(serv.id, { transaction: t });
+          if (servicioEncontrado) {
+            serviciosSeleccionados.push(servicioEncontrado);
+          }
+        }
+      } else if (req.body.servicioID) {
+        // ✅ VIEJO: Un solo servicio
+        const servicioUnico = await Servicio.findByPk(req.body.servicioID, { transaction: t });
+        if (servicioUnico) {
+          serviciosSeleccionados = [servicioUnico];
+        }
+      }
+
+      if (serviciosSeleccionados.length === 0) {
         await t.rollback();
-        return res.status(404).json({
-          mensaje: "Servicio no encontrado",
-          servicioID: req.body.servicioID,
+        return res.status(400).json({ mensaje: "Se requiere al menos un servicio" });
+      }
+
+      // ✅ CALCULAR DURACIÓN Y PRECIO TOTAL
+      let duracionTotalMinutos = 0;
+      let precioTotal = 0;
+      const serviciosInfo = [];
+
+      for (const serv of serviciosSeleccionados) {
+        const [h, m] = (serv.duracionMaxima || "00:30:00").split(":").map(Number);
+        const minutosServicio = h * 60 + m;
+        duracionTotalMinutos += minutosServicio;
+        precioTotal += Number(serv.precio || 0);
+        serviciosInfo.push({
+          id: serv.id,
+          nombre: serv.nombre,
+          duracionMaxima: serv.duracionMaxima,
+          precio: serv.precio
         });
       }
 
-      if (!req.body.pacienteID && !req.body.pacienteTemporalNombre) {
-        await t.rollback();
-        return res.status(400).json({
-          mensaje: "Se requiere pacienteID o pacienteTemporalNombre",
-        });
+      // ✅ NORMALIZAR HORA DE INICIO
+      let horaInicio = hora;
+      if (!horaInicio.includes(":")) {
+        horaInicio = `${horaInicio}:00`;
+      } else if (horaInicio.split(":").length === 2) {
+        horaInicio = `${horaInicio}:00`;
       }
 
-      if (req.body.pacienteTemporalNombre && req.body.pacienteID) {
-        await t.rollback();
-        return res.status(400).json({
-          mensaje:
-            "No se puede enviar pacienteID y pacienteTemporalNombre simultáneamente",
-        });
-      }
+      // ✅ CALCULAR HORA FIN
+      const [horaH, horaM] = horaInicio.split(":").map(Number);
+      const totalMinutosInicio = horaH * 60 + horaM + duracionTotalMinutos;
+      const horaFinH = Math.floor(totalMinutosInicio / 60);
+      const horaFinM = totalMinutosInicio % 60;
+      const horaFinFormatted = `${horaFinH.toString().padStart(2, "0")}:${horaFinM.toString().padStart(2, "0")}:00`;
 
-      let hora = req.body.hora;
-      if (!hora.includes(":")) {
-        hora = `${hora}:00`;
-      } else if (hora.split(":").length === 2) {
-        hora = `${hora}:00`;
-      }
-
-      const [horas, minutos] = servicio.duracionMaxima.split(":").map(Number);
-      const duracionMinutos = horas * 60 + minutos;
-      const horaFin = new Date(`2000-01-01T${hora}`);
-      horaFin.setMinutes(horaFin.getMinutes() + duracionMinutos);
-
-      const horaFinFormatted = `${horaFin
-        .getHours()
-        .toString()
-        .padStart(2, "0")}:${horaFin
-        .getMinutes()
-        .toString()
-        .padStart(2, "0")}:00`;
-
+      // ✅ VERIFICAR CONFLICTOS DE HORARIO
       const citasSolapadas = await Cita.findAll({
         where: {
-          barberoID: req.body.barberoID,
-          fecha: req.body.fecha,
+          barberoID,
+          fecha,
           estado: { [Op.notIn]: ["Cancelada", "Expirada"] },
         },
         transaction: t,
       });
-
-      const [horaH, horaM] = hora.split(":").map(Number);
-      const horaFinH = horaFin.getHours();
-      const horaFinM = horaFin.getMinutes();
 
       const inicioMinutos = horaH * 60 + horaM;
       const finMinutos = horaFinH * 60 + horaFinM;
 
       const tieneConflicto = citasSolapadas.some((cita) => {
         const [citaHoraH, citaHoraM] = cita.hora.split(":").map(Number);
-        const [citaHoraFinH, citaHoraFinM] = cita.horaFin
-          .split(":")
-          .map(Number);
-
+        const [citaHoraFinH, citaHoraFinM] = cita.horaFin.split(":").map(Number);
         const citaInicioMin = citaHoraH * 60 + citaHoraM;
         const citaFinMin = citaHoraFinH * 60 + citaHoraFinM;
 
@@ -596,58 +599,49 @@ class CitasController {
       if (tieneConflicto) {
         await t.rollback();
         return res.status(400).json({
-          mensaje: "El barbero ya tiene citas en ese horario",
-          conflictoCon: citasSolapadas.map((c) => ({
-            id: c.id,
-            hora: c.hora,
-            horaFin: c.horaFin,
-            servicioID: c.servicioID,
-          })),
+          mensaje: "El estilista ya tiene citas en ese horario",
         });
       }
 
+      // ✅ VALIDAR PACIENTE
+      if (!req.body.pacienteID && !req.body.pacienteTemporalNombre) {
+        await t.rollback();
+        return res.status(400).json({
+          mensaje: "Se requiere pacienteID o pacienteTemporalNombre",
+        });
+      }
+
+      // ✅ CREAR CITA
       const nuevaCita = {
-        servicioID: req.body.servicioID,
-        barberoID: req.body.barberoID,
-        fecha: req.body.fecha,
-        hora: hora,
+        servicioID: serviciosSeleccionados[0].id, // Servicio principal
+        serviciosAdicionales: serviciosInfo.slice(1), // Servicios adicionales
+        barberoID,
+        fecha,
+        hora: horaInicio,
         horaFin: horaFinFormatted,
-        duracionReal: servicio.duracionMaxima,
-        duracionRedondeada: `${Math.floor(duracionMinutos / 60)}:${(
-          duracionMinutos % 60
-        )
-          .toString()
-          .padStart(2, "0")}:00`,
+        duracionReal: `${Math.floor(duracionTotalMinutos / 60)}:${(duracionTotalMinutos % 60).toString().padStart(2, "0")}:00`,
+        duracionRedondeada: `${Math.ceil(duracionTotalMinutos / 30) * 30 / 60}:00:00`,
+        precioTotal,
         estado: "Confirmada",
-        direccion: req.body.direccion || "En barbería",
+        direccion: req.body.direccion || "En el salón",
       };
 
       if (req.body.pacienteID) {
-        const cliente = await Cliente.findByPk(req.body.pacienteID, {
-          transaction: t,
-        });
+        const cliente = await Cliente.findByPk(req.body.pacienteID, { transaction: t });
         if (!cliente) {
           await t.rollback();
-          return res.status(404).json({
-            mensaje: "Cliente no encontrado",
-            pacienteID: req.body.pacienteID,
-          });
+          return res.status(404).json({ mensaje: "Cliente no encontrado" });
         }
         nuevaCita.pacienteID = req.body.pacienteID;
       } else {
-        nuevaCita.pacienteTemporalNombre =
-          req.body.pacienteTemporalNombre.trim();
+        nuevaCita.pacienteTemporalNombre = req.body.pacienteTemporalNombre.trim();
         if (req.body.pacienteTemporalTelefono) {
-          nuevaCita.pacienteTemporalTelefono =
-            req.body.pacienteTemporalTelefono.trim();
+          nuevaCita.pacienteTemporalTelefono = req.body.pacienteTemporalTelefono.trim();
         }
       }
 
       const datosFinales = { ...nuevaCita };
-      if (
-        datosFinales.pacienteID === null ||
-        datosFinales.pacienteID === undefined
-      ) {
+      if (datosFinales.pacienteID === null || datosFinales.pacienteID === undefined) {
         delete datosFinales.pacienteID;
       }
 

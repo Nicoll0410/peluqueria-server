@@ -17,7 +17,6 @@ citasRouter.get("/available-services-by-hour", citasController.getAvailableServi
 // Para crear citas ahora pacienteID NO es obligatorio (se permite cliente temporal).
 citasRouter.post("/", [
     validaciones.estaVacio("barberoID", "El id del barbero es obligatorio"),
-    validaciones.estaVacio("servicioID", "El id del servicio es obligatorio"),
     validaciones.estaVacio("fecha", "La fecha es obligatoria"),
     validaciones.estaVacio("hora", "La hora es obligatoria")
 ], citasController.create);

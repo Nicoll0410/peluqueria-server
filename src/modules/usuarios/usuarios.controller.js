@@ -350,7 +350,7 @@ async create(req = request, res = response) {
             // Enviar email con el código
             await sendEmail({ 
                 to: email, 
-                subject: "Recuperación de contraseña - NY Barber", 
+                subject: "Recuperación de contraseña - Sala de belleza Alba", 
                 html: correos.recuperarPassword({ codigo, email }) 
             });
 

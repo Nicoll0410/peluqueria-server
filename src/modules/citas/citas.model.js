@@ -214,7 +214,7 @@ const task = cron.schedule(
   }
 );
 
-// ✅ JOB 2: NUEVO - Enviar recordatorios 20 minutos antes
+// ✅ JOB 2: CORREGIDO - Enviar recordatorios 20 minutos antes
 const recordatorioTask = cron.schedule(
   "* * * * *", // Ejecutar cada minuto
   async () => {
@@ -224,7 +224,10 @@ const recordatorioTask = cron.schedule(
       // Calcular 20 minutos en el futuro
       const en20Minutos = new Date(ahora.getTime() + 20 * 60000);
       
-      const fechaEn20Min = format(en20Minutos, "yyyy-MM-dd");
+      // ✅ Usar la fecha de HOY, no la fecha futura
+      const fechaHoy = format(ahora, "yyyy-MM-dd");
+      
+      // ✅ Calcular la hora de 20 minutos después
       const horaEn20MinInicio = format(en20Minutos, "HH:mm");
       const horaEn20MinFin = format(new Date(en20Minutos.getTime() + 60000), "HH:mm");
       
@@ -234,11 +237,11 @@ const recordatorioTask = cron.schedule(
       const { Servicio } = await import("../servicios/servicios.model.js");
       const { Usuario } = await import("../usuarios/usuarios.model.js");
       
-      // Buscar citas que necesitan recordatorio
+      // ✅ Buscar citas para HOY que empiecen en 20 minutos
       const citasParaRecordar = await Cita.findAll({
         where: {
           estado: "Confirmada",
-          fecha: fechaEn20Min,
+          fecha: fechaHoy,  // ✅ HOY, no la fecha futura
           recordatorio_enviado: false,
           hora: {
             [Op.gte]: `${horaEn20MinInicio}:00`,

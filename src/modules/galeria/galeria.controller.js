@@ -7,10 +7,6 @@ export const galeriaController = {
   // ✅ NUEVO: Subir imagen con Cloudinary
   async uploadImage(req, res) {
     try {
-      console.log('📤 Subiendo imagen...');
-      console.log('📋 File:', req.file);
-      console.log('📋 Body:', req.body);
-
       if (!req.file) {
         return res.status(400).json({
           success: false,
@@ -36,8 +32,6 @@ export const galeriaController = {
 
       // La URL de Cloudinary viene en req.file.path
       const contenido = req.file.path;
-
-      console.log('✅ URL de Cloudinary:', contenido);
 
       // Crear el registro en la BD
       const nuevoContenido = await Galeria.create({
@@ -84,10 +78,6 @@ export const galeriaController = {
   // ✅ NUEVO: Subir video con Cloudinary
   async uploadVideo(req, res) {
     try {
-      console.log('📤 Subiendo video...');
-      console.log('📋 File:', req.file);
-      console.log('📋 Body:', req.body);
-
       if (!req.file) {
         return res.status(400).json({
           success: false,
@@ -113,8 +103,6 @@ export const galeriaController = {
 
       // La URL de Cloudinary viene en req.file.path
       const contenido = req.file.path;
-
-      console.log('✅ URL del video en Cloudinary:', contenido);
 
       // Crear el registro en la BD
       const nuevoContenido = await Galeria.create({
@@ -273,10 +261,11 @@ export const galeriaController = {
   },
 
   // Obtener solo contenido destacado
-  async getDestacados(req, res) {
+// Obtener contenido para clientes
+async getDestacados(req, res) {
     try {
-      const destacados = await Galeria.findAll({
-        where: { destacado: true },
+      // ✅ Obtener TODOS los contenidos, no solo destacados
+      const todos = await Galeria.findAll({
         include: [{
           model: Barbero,
           as: 'barbero',
@@ -295,11 +284,14 @@ export const galeriaController = {
             attributes: ['email']
           }]
         }],
-        order: [['orden', 'ASC'], ['createdAt', 'DESC']]
+        order: [
+          ['destacado', 'DESC'],  // Primero destacados
+          ['createdAt', 'DESC']   // Luego más recientes
+        ]
       });
 
-      // Agrupar por barbero
-      const destacadosPorBarbero = destacados.reduce((acc, item) => {
+      // Agrupar por barbero (tomar el primero de cada uno)
+      const porBarbero = todos.reduce((acc, item) => {
         const barberoId = item.barberoID;
         
         if (!acc[barberoId]) {
@@ -309,7 +301,7 @@ export const galeriaController = {
           };
         }
         
-        // Solo tomar el primer destacado de cada barbero
+        // Solo tomar el primer contenido de cada barbero (será el destacado o el más reciente)
         if (!acc[barberoId].contenidoDestacado) {
           acc[barberoId].contenidoDestacado = {
             id: item.id,
@@ -327,13 +319,13 @@ export const galeriaController = {
 
       res.status(200).json({
         success: true,
-        data: Object.values(destacadosPorBarbero)
+        data: Object.values(porBarbero)
       });
     } catch (error) {
-      console.error('Error obteniendo destacados:', error);
+      console.error('Error obteniendo galería:', error);
       res.status(500).json({
         success: false,
-        mensaje: 'Error al obtener contenido destacado'
+        mensaje: 'Error al obtener contenido'
       });
     }
   },
@@ -507,7 +499,8 @@ export const galeriaController = {
   },
 
   // Marcar/desmarcar como destacado
-  async toggleDestacado(req, res) {
+// Marcar/desmarcar como destacado
+async toggleDestacado(req, res) {
     try {
       const { id } = req.params;
 
@@ -520,13 +513,19 @@ export const galeriaController = {
         });
       }
 
+      // ✅ Guardar el nuevo estado antes de actualizar
+      const nuevoEstado = !contenido.destacado;
+      
       await contenido.update({
-        destacado: !contenido.destacado
+        destacado: nuevoEstado
       });
+
+      // ✅ Recargar el modelo para obtener los valores actualizados
+      await contenido.reload();
 
       res.status(200).json({
         success: true,
-        mensaje: `Contenido ${contenido.destacado ? 'marcado' : 'desmarcado'} como destacado`,
+        mensaje: `Contenido ${nuevoEstado ? 'marcado' : 'desmarcado'} como destacado`,
         data: contenido
       });
     } catch (error) {

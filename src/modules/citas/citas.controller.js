@@ -653,18 +653,18 @@ class CitasController {
           include: [{ model: Rol, as: 'rol' }],
           transaction: t
         });
-        
+
         // Obtener instancia de io
         const io = req.app.get("io");
-        
+
         // Determinar destinatarios según el rol del creador
         let destinatarios = [];
-        
+
         if (usuarioCreador.rol.nombre === 'administrador') {
           // Admin crea -> notificar a barbero y cliente
           if (citaCreada.barberoID) destinatarios.push(citaCreada.barberoID);
           if (citaCreada.pacienteID) destinatarios.push(citaCreada.pacienteID);
-        } 
+        }
         else if (usuarioCreador.rol.nombre === 'barbero') {
           // Barbero crea -> notificar a admins y cliente
           const administradores = await Usuario.findAll({
@@ -677,7 +677,7 @@ class CitasController {
           });
           destinatarios = administradores.map(admin => admin.id);
           if (citaCreada.pacienteID) destinatarios.push(citaCreada.pacienteID);
-        } 
+        }
         else if (usuarioCreador.rol.nombre === 'cliente') {
           // Cliente crea -> notificar a barbero y admins
           if (citaCreada.barberoID) destinatarios.push(citaCreada.barberoID);
@@ -732,7 +732,7 @@ class CitasController {
           const usuarioDestino = await Usuario.findByPk(destinatarioId, {
             transaction: t
           });
-          
+
           if (usuarioDestino && usuarioDestino.expo_push_token) {
             await notificationsController.sendPushNotification({
               userId: destinatarioId,
@@ -757,9 +757,9 @@ class CitasController {
           include: [{ model: Usuario, as: "usuario" }],
           transaction: t
         });
-        
+
         const servicioInfo = serviciosSeleccionados[0];
-        
+
         let clienteNombre = "";
         if (req.body.pacienteID) {
           const clienteInfo = await Cliente.findByPk(req.body.pacienteID, {
@@ -772,14 +772,14 @@ class CitasController {
 
         if (barberoConEmail && barberoConEmail.usuario && barberoConEmail.usuario.email) {
           const fechaHora = new Date(`${req.body.fecha}T${hora}`);
-          
+
           const emailContent = correos.notificacionCitaBarbero({
             tipo: 'creacion',
             cliente_nombre: clienteNombre,
             fecha_hora: fechaHora,
             servicio_nombre: servicioInfo.nombre
           });
-          
+
           await sendEmail({
             to: barberoConEmail.usuario.email,
             subject: 'Nueva cita agendada - Sala de belleza Alba',
@@ -793,7 +793,7 @@ class CitasController {
       // ✅ NUEVO: ACTUALIZAR BADGES EN TIEMPO REAL PARA BARBERO Y CLIENTE
       try {
         const io = req.app.get("io");
-        
+
         // Obtener usuario del barbero
         let barberoUsuarioId = null;
         const barberoConUsuario = await Barbero.findByPk(req.body.barberoID, {
@@ -804,7 +804,7 @@ class CitasController {
           barberoUsuarioId = barberoConUsuario.usuario.id;
           console.log("👨‍💼 Barbero usuario ID:", barberoUsuarioId);
         }
-        
+
         // Obtener usuario del cliente (si existe)
         let clienteUsuarioId = null;
         if (req.body.pacienteID) {
@@ -817,7 +817,7 @@ class CitasController {
             console.log("👤 Cliente usuario ID:", clienteUsuarioId);
           }
         }
-        
+
         // Emitir eventos para actualizar badges
         if (barberoUsuarioId) {
           console.log("📤 Emitiendo actualizar_badge para barbero:", barberoUsuarioId);
@@ -828,7 +828,7 @@ class CitasController {
             timestamp: new Date().toISOString(),
           });
         }
-        
+
         if (clienteUsuarioId) {
           console.log("📤 Emitiendo actualizar_badge para cliente:", clienteUsuarioId);
           io.to(`usuario_${clienteUsuarioId}`).emit("actualizar_badge", {
@@ -838,11 +838,11 @@ class CitasController {
             timestamp: new Date().toISOString()
           });
         }
-          // También emitir broadcast general por si acaso
-  io.emit("actualizar_badge", {
-    broadcast: true,
-    timestamp: new Date().toISOString()
-  });
+        // También emitir broadcast general por si acaso
+        io.emit("actualizar_badge", {
+          broadcast: true,
+          timestamp: new Date().toISOString()
+        });
       } catch (socketError) {
         console.error("❌ Error emitiendo eventos socket:", socketError);
         // No hacer rollback por error de socket
@@ -1094,21 +1094,21 @@ class CitasController {
         });
       }
 
-    // CORRECCIÓN: Crear fecha/hora de la cita considerando zona horaria
-    const ahora = new Date();
-    const fechaCita = new Date(`${cita.fecha}T${cita.hora}:00-05:00`); // ← Añadir zona horaria
+      // CORRECCIÓN: Crear fecha/hora de la cita considerando zona horaria
+      const ahora = new Date();
+      const fechaCita = new Date(`${cita.fecha}T${cita.hora}:00-05:00`); // ← Añadir zona horaria
 
-    // CORRECCIÓN: Comparar con la hora actual considerando la diferencia
-    const diferenciaMs = fechaCita.getTime() - ahora.getTime();
-    const diferenciaMinutos = diferenciaMs / (1000 * 60);
+      // CORRECCIÓN: Comparar con la hora actual considerando la diferencia
+      const diferenciaMs = fechaCita.getTime() - ahora.getTime();
+      const diferenciaMinutos = diferenciaMs / (1000 * 60);
 
-    // Permitir cancelar hasta 5 minutos antes de la cita
-    if (diferenciaMinutos < 5) {
-      await t.rollback();
-      return res.status(400).json({
-        mensaje: "Solo se pueden cancelar citas con al menos 5 minutos de anticipación",
-      });
-    }
+      // Permitir cancelar hasta 5 minutos antes de la cita
+      if (diferenciaMinutos < 5) {
+        await t.rollback();
+        return res.status(400).json({
+          mensaje: "Solo se pueden cancelar citas con al menos 5 minutos de anticipación",
+        });
+      }
 
       await cita.update({ estado: "Cancelada" }, { transaction: t });
 
@@ -1136,7 +1136,7 @@ class CitasController {
         if (cita.barbero && cita.barbero.usuario && cita.barbero.usuario.email) {
           const fechaHora = new Date(`${cita.fecha}T${cita.hora}`);
           const motivo = req.body.motivo || "No especificado";
-          
+
           const emailContent = correos.notificacionCitaBarbero({
             tipo: 'cancelacion',
             cliente_nombre: clienteNombre,
@@ -1144,7 +1144,7 @@ class CitasController {
             servicio_nombre: cita.servicio ? cita.servicio.nombre : "Servicio",
             motivo_cancelacion: motivo
           });
-          
+
           await sendEmail({
             to: cita.barbero.usuario.email,
             subject: 'Cita cancelada - Barbería',
@@ -1305,10 +1305,9 @@ class CitasController {
         if (!barberoID) return;
 
         const start = toDecimal(cita.hora);
-        const duracionRaw = cita.servicio?.duracionMaxima || "01:00:00";
+        const duracionRaw = cita.duracionReal || cita.servicio?.duracionMaxima || "01:00:00";
         const [dh, dm] = duracionRaw.split(":").map(Number);
         const end = start + dh + dm / 60;
-
         barberoMap[barberoID].schedule.push({
           id: cita.id,
           start,
@@ -1358,9 +1357,8 @@ class CitasController {
         ? Math.floor(hourDecimal)
         : "0" + Math.floor(hourDecimal);
     const startMinutes = (hourDecimal % 1) * 60;
-    const startTime = `${startHour}:${
-      startMinutes === 0 ? "00" : startMinutes
-    }:00`;
+    const startTime = `${startHour}:${startMinutes === 0 ? "00" : startMinutes
+      }:00`;
 
     try {
       const citas = await Cita.findAll({
@@ -1466,8 +1464,8 @@ function calcularHorasDisponibles(citas, duracionMaxima, fecha) {
     const horaFormateada = Number.isInteger(horaActual)
       ? convertirHora24a12(`${horaActual}:00`)
       : convertirHora24a12(
-          `${Math.floor(horaActual)}:${(horaActual % 1) * 60}`
-        );
+        `${Math.floor(horaActual)}:${(horaActual % 1) * 60}`
+      );
 
     const tieneCita = citas.some(({ horaInicial, horaFinal }) => {
       return (

@@ -1318,11 +1318,13 @@ class CitasController {
             duracion: duracionRaw,
             precio: cita.servicio?.precio || 0,
           },
+          // ✅ NUEVO: Incluir servicios adicionales y precio total
+          serviciosAdicionales: cita.serviciosAdicionales || [],
+          precioTotal: cita.precioTotal || 0,
           cliente: {
             id: cita.cliente?.id || null,
             nombre: cita.cliente?.nombre || cita.pacienteTemporalNombre || "",
-            telefono:
-              cita.cliente?.telefono || cita.pacienteTemporalTelefono || "",
+            telefono: cita.cliente?.telefono || cita.pacienteTemporalTelefono || "",
             email: cita.cliente?.usuario?.email || "",
           },
           estado: cita.estado,
@@ -1362,10 +1364,13 @@ class CitasController {
 
     try {
       const citas = await Cita.findAll({
-        where: {
-          fecha,
-          barberoID,
-        },
+        where: { pacienteID: cliente.id },
+        attributes: [
+          'id', 'hora', 'horaFin', 'estado', 'servicioID',
+          'serviciosAdicionales', 'precioTotal', 'duracionReal',
+          'fecha', 'fechaFormateada', 'direccion',
+          'pacienteTemporalNombre', 'pacienteTemporalTelefono'
+        ],
         include: [
           {
             model: Servicio,

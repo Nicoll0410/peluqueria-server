@@ -850,7 +850,7 @@ async updateHorario(req, res) {
               {
                 model: Rol,
                 as: "rol",
-                attributes: ["id", "nombre", "avatar"],
+                attributes: ["id", "nombre"],
               },
             ],
           },
@@ -919,7 +919,7 @@ async updateHorario(req, res) {
               {
                 model: Rol,
                 as: "rol",
-                attributes: ["id", "nombre", "avatar"],
+                attributes: ["id", "nombre"],
               },
             ],
           },
@@ -965,7 +965,7 @@ async updateHorario(req, res) {
               {
                 model: Rol,
                 as: "rol",
-                attributes: ["id", "nombre", "avatar"],
+                attributes: ["id", "nombre"],
               },
             ],
           },
